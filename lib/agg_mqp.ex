@@ -1,0 +1,2 @@
+defmodule AggMqp do
+end
