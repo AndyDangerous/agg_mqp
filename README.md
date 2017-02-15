@@ -1,6 +1,25 @@
 # AggMqp
 
-**TODO: Add description**
+### First Iteration
+
+* define Aggregation/Connection
+* listen for relevant messages
+* aggregate them
+* do something
+
+### Second Iteration
+
+* Publish aggregated messages to predefined routing key
+
+### Third Iteration
+
+* Top-level [Thing] listens for messages to kick off aggregations and then creates them
+* Aggregations die after publishing
+* Supervision Tree
+
+### Fourth Iteration
+
+* Abstract AMQP stuff?
 
 ## Installation
 

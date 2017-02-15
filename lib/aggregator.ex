@@ -1,19 +1,49 @@
 defmodule Aggregator do
+  @moduledoc """
+  This module handles the aggregation of message payloads.
+  As messages come in, it aggregates them.
+  When all the messages have come in, it responds that it is done.
+  """
   use GenServer
-  defstruct routing_keys: [],
-            payloads: []
+  defmodule State do
+    defstruct routing_keys: [],
+              payloads: [],
+              finished: false
+  end
+
+  # Client API
+  def start_link(routing_keys) do
+    GenServer.start_link(__MODULE__, routing_keys, [name: __MODULE__])
+  end
+
+  def aggregate(pid, routing_key, payload) do
+    GenServer.call(pid, {:message, {payload, routing_key}})
+  end
 
   # Server API
   def init(keys) do
-    {:ok, %Aggregator{routing_keys: keys, payloads: []}}
+    {:ok, %Aggregator.State{routing_keys: keys}}
   end
 
-  def handle_cast({:message, {payload, routing_key}}, state) do
+  def handle_call({:message, {payload, routing_key}}, _from, state) do
     state = state
     |> update_payloads(payload)
     |> update_keys(routing_key)
-    |> publish
-    {:noreply, state}
+    |> update_finished
+
+    reply = state
+    |> munge_reply
+
+    {:reply, reply, state}
+  end
+
+  # Helpers
+  defp munge_reply(%{finished: false}) do
+    :ok
+  end
+
+  defp munge_reply(%{finished: true, payloads: payloads}) do
+    {:publish, payloads}
   end
 
   defp update_payloads(state, new_payload) do
@@ -24,19 +54,11 @@ defmodule Aggregator do
     %{state | routing_keys: List.delete(state.routing_keys, routing_key)}
   end
 
-  defp publish(%{routing_keys: []}) do
-    IO.puts "PUBLISHING THINGZ"
+  defp update_finished(%{routing_keys: []} = state) do
+    %{state | finished: true}
   end
-  defp publish(%{routing_keys: _keys} = state) do
+
+  defp update_finished(%{routing_keys: _keys} = state) do
     state
-  end
-
-  # Client API
-  def start_link(routing_keys) do
-    GenServer.start_link(__MODULE__, routing_keys, [name: __MODULE__])
-  end
-
-  def aggregate(routing_key, payload) do
-    GenServer.cast(__MODULE__, {:message, {payload, routing_key}}) 
   end
 end
