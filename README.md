@@ -13,12 +13,13 @@
 
 ### Third Iteration
 
-* Top-level [Thing] listens for messages to kick off aggregations and then creates them
 * Aggregations die after publishing
 * Supervision Tree
+* Add Poison to JSON-encode messages
 
 ### Fourth Iteration
 
+* Top-level [Thing] listens for messages to kick off aggregations and then creates them
 * Abstract AMQP stuff?
 
 ## Installation

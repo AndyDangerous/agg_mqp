@@ -6,26 +6,17 @@ defmodule Listener do
   """
   use GenServer
 
-  defmodule Connection do
-    defstruct chan: %AMQP.Channel{}, 
-    exchange: "",
-    subscribe_routing_keys: [],
-    publish_routing_key: "",
-    listening_queue: ""
-  end
-
 
   # Client
-  def start_link(%Listener.Connection{} = connection) do
-    GenServer.start_link(__MODULE__, connection, [])
+  def start_link(%Connection{} = connection, routing_keys) do
+    GenServer.start_link(__MODULE__, {connection, routing_keys}, [])
   end
 
   # Server
 
-  def init(connection) do
-    connection = %Listener.Connection{connection | listening_queue: "some_queue"}
+  def init({connection, routing_keys}) do
     AMQP.Queue.declare(connection.chan, connection.listening_queue)
-    connection |> bind
+    connection |> bind(routing_keys)
 
     # {:ok, _pid} = Aggregator.start_link(aggregation.subscribe_routing_keys)
     {:ok, _consumer_tag} = AMQP.Basic.consume(connection.chan, connection.listening_queue)
@@ -57,8 +48,8 @@ defmodule Listener do
     Server.handle_message(routing_key, payload)
   end
 
-  defp bind(connection) do
-    connection.subscribe_routing_keys
+  defp bind(connection, routing_keys) do
+    routing_keys
     |> Enum.each( fn(key) -> AMQP.Queue.bind(
         connection.chan,
         connection.listening_queue,
