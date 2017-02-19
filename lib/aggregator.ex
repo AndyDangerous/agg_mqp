@@ -47,6 +47,8 @@ defmodule Aggregator do
   end
 
   defp update_payloads(state, new_payload) do
+    new_payload = new_payload
+    |> Poison.decode!
     %{state | payloads: [new_payload | state.payloads]}
   end
 

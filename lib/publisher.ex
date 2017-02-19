@@ -34,7 +34,10 @@ defmodule Publisher do
   defp publish_payload({payload, %Publisher{} = state}) do
     connection = state.connection
     routing_key = state.routing_key
+    payload = payload
+    |> Poison.encode!(payload)
 
-    AMQP.Basic.publish(connection.chan, connection.exchange, routing_key, "#{payload}")
+    AMQP.Basic.publish(connection.chan, connection.exchange, routing_key, payload)
+
   end
 end

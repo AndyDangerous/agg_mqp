@@ -10,8 +10,9 @@ defmodule AggMqpTest do
     #params
     route1 = "routing.key1"
     route2 = "routing.key2"
-    route3 = "routing.key3"
     exchange = "test_exchange"
+    message1 = Poison.encode! %{message: "Hello, World!"}
+    message2 = Poison.encode! %{message: "Goodbye, World!"}
 
     connection = %Connection{chan: chan, exchange: exchange}
     aggregation = %Aggregation{
@@ -25,13 +26,14 @@ defmodule AggMqpTest do
     AMQP.Queue.declare(chan, "publish_queue")
     AMQP.Queue.bind(chan, "publish_queue", "test_exchange", [routing_key: "publish_queue"])
 
-    AMQP.Basic.publish chan, "test_exchange", route1, "Hello, World!"
-    AMQP.Basic.publish chan, "test_exchange", route2, "Hello, World!"
+    AMQP.Basic.publish chan, "test_exchange", route1, message1
+    AMQP.Basic.publish chan, "test_exchange", route2, message2
 
     #Give a moment to aggregate and publish
     :timer.sleep 10
 
     {:ok, payload, meta}  = AMQP.Basic.get chan, "publish_queue"
-    assert payload == "Hello, World!Hello, World!"
+    payload = Poison.decode!(payload)
+    assert payload == [%{"message" => "Goodbye, World!"}, %{"message" => "Hello, World!"}]
   end
 end
